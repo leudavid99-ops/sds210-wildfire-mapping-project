@@ -1,0 +1,1 @@
+# sds210-wildfire-mapping-project
