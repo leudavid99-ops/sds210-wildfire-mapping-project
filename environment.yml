@@ -1,0 +1,38 @@
+name: sds210-wildfires
+
+channels:
+  - conda-forge
+
+dependencies:
+  # --- Python ---
+  - python=3.13
+
+  # --- Core data handling ---
+  - pandas>=2.2
+  - numpy>=2.0
+
+  # --- Geospatial ---
+  - geopandas>=1.0
+  - shapely>=2.0
+  - pyogrio>=0.9          # fast GeoPackage / vector I/O backend for GeoPandas
+  - fiona>=1.10           # fallback vector I/O
+
+  # --- HTTP requests (FIRMS API) ---
+  - requests>=2.32
+
+  # --- Static plots ---
+  - matplotlib>=3.9
+  - seaborn>=0.13
+
+  # --- Interactive web maps ---
+  - folium>=0.17
+  - branca>=0.7           # Folium dependency (legends, colormaps)
+
+  # --- Jupyter ---
+  - jupyterlab>=4.2
+  - notebook>=7.2
+  - ipykernel>=6.29
+  - ipywidgets>=8.1       # required for some folium.plugins controls
+
+  # --- Export to HTML / PDF for submission ---
+  - nbconvert>=7.16
