@@ -4,7 +4,7 @@
 
 This repository contains a reproducible workflow for retrieving recent active fire detections from the **NASA FIRMS API**, cleaning the data with Python, exploring global spatial and temporal wildfire patterns, and publishing the result as a set of **interactive web maps**.
 
-The project was developed for the SDS210 *Programming with Spatial Data* course and focuses on building a transparent, notebook-based geospatial workflow rather than only producing a final map.
+The project was developed for the SDS210 *Programming with Spatial Data* course and focuses on building a transparent, notebook-based geospatial workflow.
 
 ---
 
@@ -49,11 +49,55 @@ sds210-wildfire-mapping-project/
 ├── outputs/
 │   ├── figures/             # Exploratory plots for Q1–Q4
 │   └── maps/                # Exported interactive HTML maps
-├── environment.yml          # Python package dependencies (or requirements.txt)
+├── secrets/                 # NASA FIRMS MAP_KEY (gitignored — see "Setup" below)
+├── .gitignore
+├── environment.yml          # Python package dependencies
 └── README.md
 ```
 
 The intended workflow is sequential: retrieval → cleaning → analysis → interactive mapping.
+
+---
+
+## Setup
+
+### 1. Install the Python environment
+
+The required packages are listed in `environment.yml`. With conda:
+
+```bash
+conda env create -f environment.yml
+conda activate sds210-wildfires
+```
+
+### 2. Provide a NASA FIRMS MAP_KEY
+
+The retrieval notebook needs a free MAP_KEY from <https://firms.modaps.eosdis.nasa.gov/api/map_key/>. The key is read from one of two places, in this order:
+
+1. the `FIRMS_MAP_KEY` environment variable, or
+2. a local file `secrets/firms_map_key.txt` containing just the key on one line.
+
+The `secrets/` folder is listed in `.gitignore`, so the key never reaches the repository. **Do not paste the key directly into the notebook** — it would end up in every exported HTML/PDF and in Git history.
+
+To use the local-file approach:
+
+```bash
+mkdir -p secrets
+echo "your_map_key_here" > secrets/firms_map_key.txt
+```
+
+Confirm `.gitignore` is doing its job — this command should print a match:
+
+```bash
+git check-ignore -v secrets/firms_map_key.txt
+```
+
+If no key is provided, the retrieval notebook still works by reading the cached CSV in `data/raw/`.
+
+### 3. Run the notebooks in order
+
+`data_retrieval.ipynb` → `data_cleaning.ipynb` → `exploratory_analysis.ipynb` → `interactive_web_map.ipynb`.
+Each notebook reads the output of the previous step; running them out of order produces `FileNotFoundError` or stale results. Use *Kernel → Restart & Run All* before moving on to the next notebook.
 
 ---
 
@@ -68,7 +112,7 @@ Retrieves active fire detections from the NASA FIRMS API. The API request is bui
 - `AREA`: area of interest — `"world"` for global coverage, or a `west,south,east,north` bounding box for a region
 - `DAYS`: number of recent days requested
 
-A reusable `fetch_firms_data()` function handles both the live API call and a local fallback: the downloaded CSV is cached in `data/raw/`, and if no API key is supplied (or the request fails) the notebook loads the cached file instead. This keeps the later notebooks reproducible without repeatedly querying the API.
+The `fetch_firms_data()` function follows a **cache-first** pattern: if `data/raw/firms_viirs_global_5d.csv` already exists, it is reused and no API call is made. The cached CSV is therefore the exact snapshot the rest of the project is built on, and re-running the notebook is safe — it will not silently overwrite the data or burn API transactions. Pass `force_refresh=True` only when you deliberately want fresh data from FIRMS; this overwrites the cache. If the API call fails, the function falls back to the cache when one is available.
 
 ### 2. Data cleaning — `data_cleaning.ipynb`
 
@@ -89,7 +133,7 @@ This step checks whether the data looks plausible before building the final maps
 
 ### 4. Interactive mapping — `interactive_web_map.ipynb`
 
-Builds two complementary interactive web maps with `folium` / Leaflet:
+Builds two interactive web maps with `folium` / Leaflet:
 
 - **Date-picker map** (`wildfire_interactive_map.html`) — each acquisition date is rendered as a separate, toggleable layer, collected under a grouped layer control. Because the control is non-exclusive, several days can be switched on at once and compared side by side on a single map.
 - **Time-slider map** (`wildfire_timeslider_map.html`) — the same detections animated through time with play / step / loop controls, for day-by-day playback.
@@ -194,6 +238,12 @@ fires_gdf.to_file("data/processed/firms_viirs_cleaned.gpkg", layer="fires", driv
 ### Step 8: Use the processed file in the analysis and map notebooks
 
 All later notebooks load the cleaned file from `data/processed/` instead of querying the API again. This makes the project easier to reproduce and avoids unnecessary API calls.
+
+---
+
+## Note on reproducibility
+
+NASA FIRMS only serves detections from the last 5–10 days. The cached CSV in `data/raw/firms_viirs_global_5d.csv` is therefore not just a convenience — it is the **fixed snapshot** the submitted analysis is based on. Re-running the retrieval notebook with `force_refresh=True` will fetch current data and produce different Q1–Q4 results than those shown in the report.
 
 ---
 
