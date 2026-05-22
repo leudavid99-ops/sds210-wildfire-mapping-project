@@ -9,5 +9,6 @@ sites/site*/public/theme/
 textpattern/
 HISTORY.txt
 README.txt
+.DS_Store
 # Secrets — never commit API keys
 secrets/
